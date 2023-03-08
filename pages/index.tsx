@@ -169,6 +169,11 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <main>
+        <div className="pt-4 px-4">
+          <p className="text-xl font-bold">
+            Harga Crypto dalam Rupiah Hari Ini
+          </p>
+        </div>
         <div className="w-100 pt-4 text-center">{_renderList()}</div>
       </main>
     </>

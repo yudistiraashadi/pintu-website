@@ -1,123 +1,176 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
+import Head from "next/head";
+import { Inter } from "next/font/google";
+import React from "react";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
+
+import axios from "axios";
+
+import { useQuery, useQueryClient } from "react-query";
 
 export default function Home() {
+  const [sortBy, setSortBy] = React.useState("default");
+
+  const pricesQuery = useQuery<any, Error>(
+    "prices",
+    async () => {
+      const res = await axios.get(
+        "https://api.pintu.co.id/v2/trade/price-changes"
+      );
+      return res.data.payload;
+    },
+    {
+      refetchInterval: 2000,
+    }
+  );
+
+  const currencyQuery = useQuery<any, Error>("currencies", async () => {
+    const res = await axios.get(
+      "https://api.pintu.co.id/v2/wallet/supportedCurrencies"
+    );
+    return res.data.payload;
+  });
+
+  const _renderList = () => {
+    if (pricesQuery.isLoading || currencyQuery.isLoading)
+      return <p>Loading...</p>;
+
+    if (pricesQuery.isError) return <p>Error: {pricesQuery.error.message}</p>;
+
+    if (currencyQuery.isError)
+      return <p>Error: {currencyQuery.error.message}</p>;
+
+    return (
+      <div className="relative overflow-x-auto">
+        <table className="hidden md:table w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col"></th>
+              <th scope="col" className="px-6 py-3">
+                Cryto
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Harga
+              </th>
+              <th scope="col" className="px-6 py-3">
+                24 Jam
+              </th>
+              <th scope="col" className="px-6 py-3">
+                1 MGG
+              </th>
+              <th scope="col" className="px-6 py-3">
+                1 BLN
+              </th>
+              <th scope="col" className="px-6 py-3">
+                1 THN
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {currencyQuery.data
+              .filter((i) => i.currencyGroup !== "IDR")
+              .map((currency) => {
+                let pricePair = currency.currencyGroup.toLowerCase() + "/idr";
+                let price = pricesQuery.data.find(
+                  (item) => item.pair == pricePair
+                );
+
+                return (
+                  <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                    <th
+                      scope="row"
+                      className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                    >
+                      <div
+                        className={
+                          "w-12 h-12 rounded-full flex items-center justify-center"
+                        }
+                        style={{ backgroundColor: currency.color }}
+                      >
+                        <p className="text-white text-xs">
+                          {currency.currencySymbol}
+                        </p>
+                      </div>
+                    </th>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-bold">{currency.name}</p>
+
+                        <p>{currency.currencyGroup}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      Rp {Intl.NumberFormat("id-ID").format(price.latestPrice)}
+                    </td>
+                    <td className="px-6 py-4">{price.day} %</td>
+                    <td className="px-6 py-4">{price.week} %</td>
+                    <td className="px-6 py-4">{price.month} %</td>
+                    <td className="px-6 py-4">{price.year} %</td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+
+        <div className="block md:hidden">
+          {currencyQuery.data
+            .filter((i) => i.currencyGroup !== "IDR")
+            .map((currency) => {
+              let pricePair = currency.currencyGroup.toLowerCase() + "/idr";
+              let price = pricesQuery.data.find(
+                (item) => item.pair == pricePair
+              );
+
+              return (
+                <div
+                  key={currency.currencyGroup}
+                  className="flex flex-row w-full items-center px-4 py-2 bg-white border-b border-gray-300"
+                >
+                  {/* icon */}
+                  <div
+                    className={
+                      "w-12 h-12 rounded-full flex items-center justify-center"
+                    }
+                    style={{ backgroundColor: currency.color }}
+                  >
+                    <p className="text-white text-xs">
+                      {currency.currencySymbol}
+                    </p>
+                  </div>
+
+                  {/* name */}
+                  <div className="flex flex-1 flex-col items-start px-4">
+                    <p className="font-bold">{currency.name}</p>
+
+                    <p>{currency.currencyGroup}</p>
+                  </div>
+
+                  {/* price */}
+                  <div className="flex flex-col px-2 justify-end items-end">
+                    <p className="font-bold">
+                      Rp {Intl.NumberFormat("id-ID").format(price.latestPrice)}
+                    </p>
+
+                    <p>{price.day} %</p>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
+        <title>Pintu - Assessment Test</title>
+        <meta name="description" content="Pintu Assessment Test" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+      <main>
+        <div className="w-100 pt-4 text-center">{_renderList()}</div>
       </main>
     </>
-  )
+  );
 }
